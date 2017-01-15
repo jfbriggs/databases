@@ -2,32 +2,36 @@ var db = require('../db');
 
 module.exports = {
   messages: {
-    get: function (req, res) {
+    get: function (callback, room) {
 
-      db.query('SELECT * FROM messages', function (err, results, fields) {
+      var qString;
+      
+      if (!room) {
+        qString = 'select username, message, roomname from messages order by id desc';
+      } else {
+        qString = 'select username, message, roomname from messages where roomname = "' + room + '"';
+      }
+
+      db.query(qString, function (err, result) {
         if (err) {
           console.log('Select error:', err);
+        } else {
+          callback(err, result);
         }
-
-        res.end(JSON.stringify(results));
       });
+    },
 
-    }, // a function which produces all the messages
-    post: function (obj, res) {
-      var user = obj.username;
-      var msg = obj.message;
-      var room = obj.roomname;
-      
-      console.log('Attempting to add:', user, msg, room);
-      db.query('insert into messages (username,message,roomname) values ("' + user + '","' + msg + '","' + room + '");', 
-      function(err, result) {
+    post: function (data, callback) {
+
+      var params = [data.username, data.message, data.roomname];
+      var qString = 'insert into messages (username, message, roomname) values (?, ?, ?)';
+      db.query(qString, params, function(err, result) {
         if (err) {
           console.log('QUERY ERROR', err);
         } else {
-          res.end();
+          callback(err, result);
         }
       });
-      
     }
   },
 

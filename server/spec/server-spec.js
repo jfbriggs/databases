@@ -70,8 +70,8 @@ describe('Persistent Node Chat Server', function() {
 
   it('Should output all messages from the DB', function(done) {
     // Let's insert a message into the db
-    var queryString = 'insert into messages SET ?';
-    var queryArgs = {username: 'joe', message: 'Men like you can never change!', roomname: 'main'};
+    var queryString = 'insert into messages (username, message, roomname) values (?, ?, ?)';
+    var queryArgs = ['joe', 'Men like you can never change!', 'main'];
     // TODO - The exact query string and query args to use
     // here depend on the schema you design, so I'll leave
     // them up to you. */
@@ -89,4 +89,27 @@ describe('Persistent Node Chat Server', function() {
       });
     });
   });
+
+  it('Should output all messages from a specified room', function(done) {
+    var queryString = 'insert into messages (username, message, roomname) values (?, ?, ?)';
+    var queryArgs1 = ['DJ', 'I am root!', 'lobby'];
+    var queryArgs2 = ['Student', 'ORM?!?!?', '8th-floor'];
+
+    dbConnection.query(queryString, queryArgs1, function(err, results) {
+      if (err) { throw err; }
+      
+      dbConnection.query(queryString, queryArgs2, function(err, results) {
+        if (err) { throw err; }
+        
+        request('http://127.0.0.1:3000/classes/messages?roomname=lobby', function(error, response, body) {
+          var messageLog = JSON.parse(body);
+          expect(messageLog.length).to.equal(1);
+          expect(messageLog[0].roomname).to.equal('lobby');
+          done();
+
+        });
+      });
+    });
+  });
+
 });
